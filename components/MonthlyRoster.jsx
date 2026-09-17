@@ -115,6 +115,15 @@ ${yearMonth}-07: OFF
     }
 
     onSaveRoster(parsed.yearMonth, parsed.rosterMap);
+    
+    // Jump calendar to imported month
+    if (parsed.yearMonth) {
+      const [pYear, pMonth] = parsed.yearMonth.split("-").map(Number);
+      if (pYear && pMonth) {
+        setCurrentDate(new Date(pYear, pMonth - 1, 1));
+      }
+    }
+
     setImportFeedback({
       error: false,
       message: `Berhasil memuat ${parsed.count} jadwal shift untuk bulan ${parsed.yearMonth}!`,

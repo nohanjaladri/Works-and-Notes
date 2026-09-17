@@ -15,6 +15,7 @@ import {
   registerWithUsername,
   getStoredFirebaseConfig,
   saveFirebaseConfigToStorage,
+  testRTDBConnection,
 } from "../lib/firebase";
 
 export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
@@ -24,6 +25,8 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
   const [displayName, setDisplayName] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [testLoading, setTestLoading] = useState(false);
+  const [testResult, setTestResult] = useState(null);
 
   // Firebase Config State
   const [firebaseConfigInput, setFirebaseConfigInput] = useState(() => {
@@ -355,6 +358,43 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
               className="w-full p-2.5 rounded bg-zinc-950 border border-zinc-700 font-mono text-[11px] text-zinc-200 focus:outline-none focus:border-sky-500 leading-relaxed"
             ></textarea>
 
+            <div className="flex items-center gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  try {
+                    const parsed = JSON.parse(firebaseConfigInput);
+                    parsed.databaseURL =
+                      "https://work-notes-d3ca6-default-rtdb.asia-southeast1.firebasedatabase.app";
+                    setFirebaseConfigInput(JSON.stringify(parsed, null, 2));
+                    saveFirebaseConfigToStorage(parsed);
+                    setConfigSaved(true);
+                    setTimeout(() => setConfigSaved(false), 2000);
+                  } catch (e) {}
+                }}
+                className="flex-1 py-1 px-2 rounded bg-zinc-800 hover:bg-zinc-700 text-[10px] font-mono text-zinc-300 border border-zinc-700"
+              >
+                Region Singapore (asia-se1)
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  try {
+                    const parsed = JSON.parse(firebaseConfigInput);
+                    parsed.databaseURL =
+                      "https://work-notes-d3ca6-default-rtdb.firebaseio.com";
+                    setFirebaseConfigInput(JSON.stringify(parsed, null, 2));
+                    saveFirebaseConfigToStorage(parsed);
+                    setConfigSaved(true);
+                    setTimeout(() => setConfigSaved(false), 2000);
+                  } catch (e) {}
+                }}
+                className="flex-1 py-1 px-2 rounded bg-zinc-800 hover:bg-zinc-700 text-[10px] font-mono text-zinc-300 border border-zinc-700"
+              >
+                Region US (firebaseio.com)
+              </button>
+            </div>
+
             {configSaved && (
               <div className="p-2 rounded bg-emerald-950 border border-emerald-800 text-emerald-300 text-xs flex items-center gap-1.5">
                 <Check className="w-3.5 h-3.5" />
@@ -369,6 +409,58 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
             >
               Simpan Konfigurasi
             </button>
+            <div className="flex items-center gap-2 pt-1">
+              <button
+                type="button"
+                onClick={handleSaveConfig}
+                className="flex-1 py-2 rounded text-xs font-semibold bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-600"
+              >
+                Simpan Konfigurasi
+              </button>
+              <button
+                type="button"
+                disabled={testLoading}
+                onClick={async () => {
+                  setTestLoading(true);
+                  setTestResult(null);
+                  const res = await testRTDBConnection();
+                  setTestLoading(false);
+                  setTestResult(res);
+                }}
+                className="flex-1 py-2 rounded text-xs font-semibold bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white shadow"
+              >
+                {testLoading ? "Menguji..." : "🔍 Uji Koneksi Database"}
+              </button>
+            </div>
+
+            {testResult && (
+              <div
+                className={`p-2.5 rounded text-xs border space-y-1 ${
+                  testResult.success
+                    ? "bg-emerald-950/80 border-emerald-800 text-emerald-300"
+                    : "bg-red-950/80 border-red-800 text-red-300"
+                }`}
+              >
+                <div className="font-bold flex items-center gap-1.5">
+                  {testResult.success ? (
+                    <Check className="w-4 h-4" />
+                  ) : (
+                    <AlertCircle className="w-4 h-4" />
+                  )}
+                  <span>
+                    {testResult.success
+                      ? "Koneksi Berhasil!"
+                      : "Koneksi Gagal!"}
+                  </span>
+                </div>
+                <div className="text-[11px] leading-relaxed">
+                  {testResult.success ? testResult.message : testResult.error}
+                </div>
+                <div className="text-[10px] font-mono opacity-75">
+                  URL: {testResult.databaseURL}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
